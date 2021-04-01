@@ -3,6 +3,7 @@ from utils.utils import hashPassword
 from utils.utils import successMessage, warningMessage, errorMessage, leftPrint, rightPrint, customMessage
 from models.user import User
 import time
+import types
 
 from prettytable import PrettyTable
 
@@ -23,8 +24,13 @@ class FirebaseService:
 
         self.currentUser = None
 
+        self.msgStream = None
+
     def getCurrentUser(self):
         return self.currentUser
+
+    def getCurrentUserId(self):
+        return self.currentUser.getId()
 
     def signUpUser(self, username, id, password):
         encodedPassword = hashPassword(password)
@@ -84,7 +90,8 @@ class FirebaseService:
 
     def sendMessage(self, receiverId, msg):
         if self.checkUserExistsById(receiverId):
-            successMessage("User found")
+            successMessage("Message sent to " +
+                           self.getNameFromDirectory(receiverId))
 
             currentUserId = self.currentUser.getId()
 
@@ -146,19 +153,6 @@ class FirebaseService:
                     rightPrint(stamp)
                     rightPrint("")
 
-    def seeMessages(self, senderId):
-        self.updatesMessagesForUsers()
-        userRooms = self.currentUser.getRooms()
-        currentUserId = self.currentUser.getId()
-
-        roomIds = []
-        for room in userRooms:
-            if room == currentUserId + senderId:
-                roomIds.append(room)
-
-        for room in roomIds:
-            self.getMessagesFromRoom(room, senderId, currentUserId)
-
     def lookupDirectory(self):
         self.updatesMessagesForUsers()
         t = PrettyTable(['Name', 'ID'])
@@ -189,3 +183,49 @@ class FirebaseService:
                 if d['id'] == user:
                     t.add_row([d['username'], user])
         print(t)
+
+    def getNameFromDirectory(self, Id):
+        directory = self.currentUser.getDirectory()
+        for d in directory:
+            if d['id'] == Id:
+                return d['username']
+
+    def stream_handler(self, message):
+
+        receiver = self.currentUser.getId()
+        if len(message["data"]) == 3:
+            print(message["data"])
+            print("[{0}] :> {1}".format(self.getNameFromDirectory(
+                message["data"]["sender"]), message["data"]["message"]))
+
+    def closeStream(self):
+        self.stream.close()
+
+    def seeLiveMessage(self, senderId):
+        userRooms = self.currentUser.getRooms()
+        currentUserId = self.currentUser.getId()
+
+        roomIds = []
+        for room in userRooms:
+            if room == currentUserId + senderId:
+                roomIds.append(room)
+
+        try:
+            self.stream = self.firebaseDB.child("messages").child(
+                roomIds[0]).stream(stream_handler=self.stream_handler)
+
+        except Exception as e:
+            print(e)
+
+    def seeMessages(self, senderId):
+        self.updatesMessagesForUsers()
+        userRooms = self.currentUser.getRooms()
+        currentUserId = self.currentUser.getId()
+
+        roomIds = []
+        for room in userRooms:
+            if room == currentUserId + senderId:
+                roomIds.append(room)
+
+        for room in roomIds:
+            self.getMessagesFromRoom(room, senderId, currentUserId)
