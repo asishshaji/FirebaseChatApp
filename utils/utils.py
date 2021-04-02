@@ -33,9 +33,7 @@ def customMessage(msg):
     row = len(msg)
     h = ''.join(['+'] + ['-' * row] + ['+'])
     result = h + '\n'"|"+msg+"|"'\n' + h
-    print()
     print(result)
-    print()
 
 
 def leftPrint(msg):

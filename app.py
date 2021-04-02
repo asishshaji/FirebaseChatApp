@@ -27,13 +27,13 @@ def main():
                 username = input("Username :> ")
                 password = input("Password :> ")
                 service.signInUser(username,  password)
-                service.updatesMessagesForUsers()
 
             elif choice == 3:
                 print("")
                 print(service.getCurrentUser())
                 print("")
             elif choice == 4:
+                service.updatesMessagesForUsers()
                 receiverId = int(input("Receiver id :> "))
                 while True:
                     msg = input("{}:> ".format(
@@ -62,7 +62,8 @@ def main():
                 service.goOffline()
                 service.closeStream()
                 exit()
-        except:
+        except Exception as e:
+            print(e)
             service.goOffline()
             exit()
 

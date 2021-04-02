@@ -1,11 +1,12 @@
+from prettytable import PrettyTable
 import pyrebase
 from utils.utils import hashPassword
 from utils.utils import successMessage, warningMessage, errorMessage, leftPrint, rightPrint, customMessage
 from models.user import User
 import time
 import types
-
-from prettytable import PrettyTable
+import timeago
+import datetime
 
 
 class FirebaseService:
@@ -98,11 +99,13 @@ class FirebaseService:
             # create room for users
             roomId = receiverId + currentUserId
             timestamp = str(time.time()).split(".")[0]
+            now = time.strftime("%Y-%m-%d %H:%M:%S")
 
             self.firebaseDB.child("messages").child(roomId).child(timestamp).set({
                 "message": msg,
                 "sender": currentUserId,
                 "receiver": receiverId,
+                "timestamp": now,
             })
 
         else:
@@ -145,12 +148,18 @@ class FirebaseService:
                 if data['receiver'] == receiver:
                     leftPrint(data['message'])
                     leftPrint("-"*30)
-                    leftPrint(stamp)
+                    leftPrint(timeago.format(
+                        data["timestamp"],             time.strftime(
+                            "%Y-%m-%d %H:%M:%S")
+                    ))
                     leftPrint("")
                 else:
                     rightPrint(data['message'])
                     rightPrint("-"*30)
-                    rightPrint(stamp)
+                    rightPrint(timeago.format(
+                        data["timestamp"],             time.strftime(
+                            "%Y-%m-%d %H:%M:%S")
+                    ))
                     rightPrint("")
 
     def lookupDirectory(self):
@@ -174,7 +183,7 @@ class FirebaseService:
 
         online = self.firebaseDB.child("onlineStatus").get()
 
-        users = [int(o.key())
+        users = [o.key()
                  for o in online.each() if o.val()['online'] == True]
 
         directory = self.currentUser.getDirectory()
@@ -193,17 +202,39 @@ class FirebaseService:
     def stream_handler(self, message):
 
         receiver = self.currentUser.getId()
-        if len(message["data"]) == 3:
-            print(message["data"])
+
+        if len(message["data"]) == 4:
+            now = time.strftime("%Y-%m-%d %H:%M:%S")
+
+            print()
+            customMessage("New message from " +
+                          self.getNameFromDirectory(message["data"]["sender"]))
             print("[{0}] :> {1}".format(self.getNameFromDirectory(
-                message["data"]["sender"]), message["data"]["message"]))
+                message["data"]["sender"]), message["data"]["message"]), "({})".format(timeago.format(message["data"]["timestamp"], now)))
+            print()
+        else:
+            print(type(message["data"]))
+            for val in message["data"]:
+                now = time.strftime("%Y-%m-%d %H:%M:%S")
+
+                print()
+                print("[{0}] :> {1}".format(self.getNameFromDirectory(
+                    message["data"][val]["sender"]), message["data"][val]["message"]), "({})".format(timeago.format(message["data"][val]["timestamp"], now)))
+                print()
 
     def closeStream(self):
         self.stream.close()
 
     def seeLiveMessage(self, senderId):
+
+        self.updatesMessagesForUsers()
+
         userRooms = self.currentUser.getRooms()
         currentUserId = self.currentUser.getId()
+
+        online = self.firebaseDB.child("onlineStatus").get()
+
+        directory = self.currentUser.getDirectory()
 
         roomIds = []
         for room in userRooms:
