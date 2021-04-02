@@ -221,7 +221,6 @@ class FirebaseService:
                 message["data"]["sender"]), message["data"]["message"]), "({})".format(timeago.format(message["data"]["timestamp"], now)))
             print()
         else:
-            print(type(message["data"]))
             for val in message["data"]:
                 now = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -328,7 +327,7 @@ class FirebaseService:
         timestamp = str(time.time()).split(".")[0]
         now = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        self.firebaseDB.child("messages").child(groupId).child(timestamp).set({
+        self.firebaseDB.child("group_messages").child(groupId).child(timestamp).set({
             "message": msg,
             "sender": currentUserId,
             "receiver": groupId,
@@ -336,11 +335,33 @@ class FirebaseService:
         })
 
     def liveStreamHandler(self, message):
-        print(message["data"])
+        # print(message["data"])
+
+        msg = message["data"]
+
+        if len(msg) == 4:
+            now = time.strftime("%Y-%m-%d %H:%M:%S")
+            leftPrint(msg["message"])
+            customMessage("New message from " +
+                          self.getNameFromDirectory(msg["sender"]))
+            print("[{0}] :> {1}".format(self.getNameFromDirectory(
+                msg["sender"]), msg["message"]), "({})".format(timeago.format(msg["timestamp"], now)))
+            print()
+
+        else:
+            for val in msg:
+                now = time.strftime("%Y-%m-%d %H:%M:%S")
+                print()
+                print("[{0}] :> {1}".format(self.getNameFromDirectory(
+                    msg[val]["sender"]), msg[val]["message"]), "({})".format(timeago.format(msg[val]["timestamp"], now)))
+                print()
 
     def seeLiveMessagesFromGroup(self, groupId):
 
         # check if current user is part of the group
-
-        self.stream = self.firebaseDB.child("messages").child(
-            groupId).stream(stream_handler=liveStreamHandler)
+        try:
+            self.stream = self.firebaseDB.child("group_messages").child(
+                groupId).stream(stream_handler=self.liveStreamHandler)
+        except Exception as e:
+            print(e)
+            print("Error")

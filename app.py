@@ -11,8 +11,8 @@ def main():
     while True:
 
         if service.currentUser != None:
-            customMessage("     Logged in as " +
-                          service.currentUser.getName()+"having id  "+str(service.currentUser.getId()))
+            customMessage("     Logged in as " + service.currentUser.getName() +
+                          " "+str(service.currentUser.getId()))
         else:
             print()
             customMessage("     You are not logged in.      ")
@@ -56,14 +56,16 @@ def main():
             elif choice == 7:
                 service.getOnlineUsers()
             elif choice == 8:
-                warningMessage("Stream available only for two minutes.")
+                # warningMessage("Stream available only for two minutes.")
                 senderId = int(input("Sender id :> "))
                 service.seeLiveMessage(senderId)
                 import time
-                time.sleep(120)
+                time.sleep(1200)
                 service.closeStream()
 
             elif choice == 9:
+                service.updateDirectory()
+
                 groupId = service.createGroup()
 
                 service.lookupDirectory()
@@ -76,6 +78,8 @@ def main():
                         break
 
             elif choice == 10:
+                service.updateDirectory()
+
                 service.getOwnedGroups()
 
                 userid = int(input("Enter user id :> "))
@@ -98,15 +102,16 @@ def main():
                     if msg == "q":
                         break
             elif choice == 12:
-                warningMessage("Stream available only for two minutes.")
+                # warningMessage("Stream available only for two minutes.")
+                service.updateDirectory()
 
                 _ = service.getGroups()
 
-                groupId = int(input("Group id :> "))
+                groupId = input("Group id :> ")
                 service.seeLiveMessagesFromGroup(groupId)
 
                 import time
-                time.sleep(120)
+                time.sleep(1200)
                 service.closeStream()
             else:
                 service.goOffline()
