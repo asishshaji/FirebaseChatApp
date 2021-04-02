@@ -7,6 +7,9 @@ import time
 import types
 import timeago
 import datetime
+import random
+import string
+import secrets
 
 
 class FirebaseService:
@@ -24,7 +27,7 @@ class FirebaseService:
 
         self.currentUser = None
 
-        self.msgStream = None
+        self.stream = None
 
     def getCurrentUser(self):
         return self.currentUser
@@ -50,6 +53,7 @@ class FirebaseService:
             warningMessage("{} already exists".format(username))
 
     def signInUser(self, username, password):
+        successMessage("Connecting to authentication service")
         encodedPassword = hashPassword(password)
         actualPassword = self.getUser(username)[0].val()['password']
         if actualPassword == encodedPassword:
@@ -110,7 +114,7 @@ class FirebaseService:
         else:
             errorMessage("User does not exists")
 
-    def updatesMessagesForUsers(self):
+    def updateDirectory(self):
         users = self.firebaseDB.child("users").get()
         directory = []
         if users.val() != None:
@@ -121,6 +125,10 @@ class FirebaseService:
                 })
 
         self.currentUser.setDirectory(directory)
+
+    def updatesMessagesForUsers(self):
+        self.updateDirectory()
+
         currentUserId = self.currentUser.getId()
 
         messages = self.firebaseDB.child("messages").get()
@@ -168,7 +176,6 @@ class FirebaseService:
 
         names = [d['username'] for d in dir]
         ids = [d['id'] for d in dir]
-        print(names, ids)
 
         for i in range(len(names)):
             t.add_row([names[i], ids[i]])
@@ -179,17 +186,19 @@ class FirebaseService:
         self.updatesMessagesForUsers()
 
         t = PrettyTable(['Name', 'ID'])
+        t.title = "Online users"
 
         online = self.firebaseDB.child("onlineStatus").get()
 
-        users = [o.key()
-                 for o in online.each() if o.val()['online'] == True]
+        userIDS = [int(o.key())
+                   for o in online.each() if o.val()['online'] == True]
 
         directory = self.currentUser.getDirectory()
-        for user in users:
-            for d in directory:
-                if d['id'] == user:
-                    t.add_row([d['username'], user])
+
+        for id in userIDS:
+            user = list(filter(lambda u: u['id'] == id, directory))
+            t.add_row([user[0]['username'], id])
+
         print(t)
 
     def getNameFromDirectory(self, Id):
@@ -259,3 +268,79 @@ class FirebaseService:
 
         for room in roomIds:
             self.getMessagesFromRoom(room, senderId, currentUserId)
+
+    def createGroup(self):
+        res = ''.join(secrets.choice(string.ascii_lowercase + string.digits)
+                      for i in range(30))
+
+        self.firebaseDB.child("groups").child(res).update(
+            {"admin": self.currentUser.getId()})
+
+        self.firebaseDB.child("messages").child(res)
+
+        return res
+
+    def addUserToGroup(self, groupId, userid):
+        group = self.firebaseDB.child("groups").child(groupId).get()
+
+        admin = group.val()['admin']
+        print("admin is")
+        if self.currentUser.getId() == admin:
+            self.firebaseDB.child("groups").child(
+                groupId).update({userid: userid})
+            successMessage("Added {} to group".format(userid))
+        else:
+            errorMessage("You are not the admin")
+
+    def getOwnedGroups(self):
+        currentUserId = self.currentUser.getId()
+
+        groups = self.firebaseDB.child("groups").order_by_child(
+            "admin").equal_to(currentUserId).get()
+
+        groups = [group.key() for group in groups.each()]
+
+        t = PrettyTable(['Group IDs'])
+        t.add_rows([groups])
+
+        print(t)
+
+    def getGroups(self):
+        currentUserId = self.currentUser.getId()
+
+        groupsRef = self.firebaseDB.child("groups").get()
+
+        groups = []
+
+        for group in groupsRef.each():
+            if group.val()['admin'] == currentUserId or group.val()[str(currentUserId)] == currentUserId:
+                groups.append(group.key())
+
+        t = PrettyTable(['Group IDs'])
+        t.add_rows([groups])
+
+        print(t)
+
+        return groups
+
+    def sendMessageToGroup(self, msg, groupId):
+        currentUserId = self.currentUser.getId()
+        timestamp = str(time.time()).split(".")[0]
+        now = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        self.firebaseDB.child("messages").child(groupId).child(timestamp).set({
+            "message": msg,
+            "sender": currentUserId,
+            "receiver": groupId,
+            "timestamp": now,
+        })
+
+    def liveStreamHandler(self, message):
+        print(message["data"])
+
+    def seeLiveMessagesFromGroup(self, groupId):
+
+        # check if current user is part of the group
+
+        self.stream = self.firebaseDB.child("messages").child(
+            groupId).stream(stream_handler=liveStreamHandler)

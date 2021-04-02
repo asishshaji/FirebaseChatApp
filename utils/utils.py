@@ -19,15 +19,15 @@ def hashPassword(password):
 
 
 def successMessage(msg):
-    print(bcolors.OKGREEN, "[i]",  msg)
+    print(bcolors.OKGREEN + "[i]",  msg)
 
 
 def warningMessage(msg):
-    print(bcolors.WARNING, "[!]", msg)
+    print(bcolors.WARNING+"[!]", msg)
 
 
 def errorMessage(msg):
-    print(bcolors.FAIL, "[x]", msg)
+    print(bcolors.FAIL + "[x]", msg)
 
 
 def customMessage(msg):
