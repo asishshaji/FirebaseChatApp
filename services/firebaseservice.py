@@ -21,7 +21,6 @@ class FirebaseService:
             "storageBucket": self.storageBucket,
             "apiKey": "apikey"
         }).database()
-        successMessage("Initialized firebase.")
 
         self.currentUser = None
 

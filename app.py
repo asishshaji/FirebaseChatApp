@@ -1,10 +1,14 @@
-from utils.utils import successMessage, leftPrint, rightPrint, customMessage
+from utils.utils import successMessage, leftPrint, rightPrint, customMessage, warningMessage, displayFeatures
 from services.firebaseservice import FirebaseService
 
 
 def main():
-    successMessage("Starting application")
+    successMessage("Starting FireChat")
     service = FirebaseService("usttest-89c43-default-rtdb")
+
+    displayFeatures()
+
+    exit()
 
     while True:
 
@@ -51,11 +55,11 @@ def main():
             elif choice == 7:
                 service.getOnlineUsers()
             elif choice == 8:
+                warningMessage("Stream available only for two minutes.")
                 senderId = int(input("Sender id :> "))
-
                 service.seeLiveMessage(senderId)
                 import time
-                time.sleep(60)
+                time.sleep(120)
                 service.closeStream()
 
             else:

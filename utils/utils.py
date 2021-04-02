@@ -1,4 +1,5 @@
 import hashlib
+from prettytable import PrettyTable
 
 
 class bcolors:
@@ -42,3 +43,17 @@ def leftPrint(msg):
 
 def rightPrint(msg):
     print("{0:>100} ".format(msg))
+
+
+def displayFeatures():
+    x = PrettyTable()
+    x.field_names = ["FireChat Features"]
+    x.align = "l"
+    x.padding_width = 5
+    x.add_row(["[✔] Authentication"])
+    x.add_row(["[✔] Get user profile"])
+    x.add_row(["[✔] Send\View messages"])
+    x.add_row(["[✔] Realtime messaging using streams"])
+    x.add_row(["[✔] Mapping b\w username and id"])
+    x.add_row(["[✔] See online users"])
+    print(x)
