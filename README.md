@@ -8,6 +8,6 @@
 [✔] Create groups<br />
 [✔] Add users to groups<br />
 [✔] Stream messages from groups<br />
-[x] Exceptions<br />
+[❌] Exceptions<br />
 
 Used streams to send realtime message.
