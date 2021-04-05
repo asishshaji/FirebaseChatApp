@@ -11,3 +11,16 @@
 [❌] Exceptions<br />
 
 Used streams to send realtime message.
+
+
+**How to run**
+
+ - Create a virtual env using 
+	 `python3 -m venv envName`
+-  Activate env using 
+`source envName/bin/activate`
+-  Install the dependencies using 
+`pip3 install -r requirements.txt`
+- Run app using 
+`python3 app.py`
+
