@@ -1,3 +1,7 @@
 {
-    "python.pythonPath": "env/bin/python"
+    "python.pythonPath": "env/bin/python",
+    "python.analysis.disabled": [
+        "unresolved-import"
+    ],
+    "python.languageServer": "Microsoft",
 }

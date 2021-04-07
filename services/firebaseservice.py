@@ -30,12 +30,30 @@ class FirebaseService:
         self.stream = None
 
     def getCurrentUser(self):
+        """Get the current user
+
+        Returns:
+            User: current user
+        """
         return self.currentUser
 
     def getCurrentUserId(self):
+        """Get logged in user's employee id
+
+        Returns:
+            int: employee id
+        """
         return self.currentUser.getId()
 
     def signUpUser(self, username, id, password):
+        """Sign up the user with given credentials
+           Given password is changed to its sha equivalent
+
+        Args:
+            username (str): username of the user
+            id (int): employee id
+            password (str): password of the user in plain text
+        """
         encodedPassword = hashPassword(password)
         if not self.checkUserExistsByUsername(username):
             self.firebaseDB.child("users").child(id).set({
@@ -53,6 +71,12 @@ class FirebaseService:
             warningMessage("{} already exists".format(username))
 
     def signInUser(self, username, password):
+        """Sign in for user
+
+        Args:
+            username (str): username of user
+            password (str): password of user
+        """
         successMessage("Connecting to authentication service")
         encodedPassword = hashPassword(password)
         actualPassword = self.getUser(username)[0].val()['password']
@@ -67,19 +91,37 @@ class FirebaseService:
             errorMessage("Invalid credentials.")
 
     def goOffline(self):
-        id = self.currentUser.getId()
+        """User online status is set to false
+        """
+        userId = self.currentUser.getId()
 
-        self.firebaseDB.child("onlineStatus").child(id).set({
+        self.firebaseDB.child("onlineStatus").child(userId).set({
             "online": False,
         })
 
     def getUser(self, username):
+        """Gets user using username
+
+        Args:
+            username (str): username of user
+
+        Returns:
+            User: User having username as username
+        """
         users = self.firebaseDB.child("users").order_by_child(
             "username").equal_to(username).get()
         if len(users.each()) != 0:
             return users.each()
 
     def checkUserExistsByUsername(self, username):
+        """Checks if user with username exists
+
+        Args:
+            username (str): username to check
+
+        Returns:
+            bool: True if user exists, False if doesnot exists
+        """
         users = self.firebaseDB.child("users").order_by_child(
             "username").equal_to(username).get()
         if len(users.each()) == 0:
@@ -87,15 +129,29 @@ class FirebaseService:
         return True
 
     def checkUserExistsById(self, id):
+        """Check if user with employeeId id exists
+
+        Args:
+            id (int): employee id of user
+
+        Returns:
+            bool: True if exists else False
+        """
         users = self.firebaseDB.child("users").child(id).get()
         if len(users.each()) == 0:
             return False
         return True
 
     def sendMessage(self, receiverId, msg):
+        """Send message to receiver having the id as receiverId
+
+        Args:
+            receiverId (int): employee id of receiver
+            msg (str): message to send
+        """
         if self.checkUserExistsById(receiverId):
-            successMessage("Message sent to " +
-                           self.getNameFromDirectory(receiverId))
+            successMessage("Message sent to {}" .format(
+                self.getNameFromDirectory(receiverId)))
 
             currentUserId = self.currentUser.getId()
 
@@ -115,6 +171,8 @@ class FirebaseService:
             errorMessage("User does not exists")
 
     def updateDirectory(self):
+        """Updates the local User object
+        """
         users = self.firebaseDB.child("users").get()
         directory = []
         if users.val() != None:
@@ -127,6 +185,8 @@ class FirebaseService:
         self.currentUser.setDirectory(directory)
 
     def updatesMessagesForUsers(self):
+        """Updates messages for local User
+        """
         self.updateDirectory()
 
         currentUserId = self.currentUser.getId()
@@ -136,8 +196,7 @@ class FirebaseService:
             roomId = []
             msgs = []
             for message in messages.each():
-
-                if self.checkUserExistsById(int(message.key())-currentUserId):
+                if self.checkUserExistsById(int(message.key()) - currentUserId):
                     roomId.append(int(message.key()))
                     msgs.append(message.val())
 
@@ -145,6 +204,13 @@ class FirebaseService:
             self.currentUser.setRooms(roomId)
 
     def getMessagesFromRoom(self, roomId, sender, receiver):
+        """Get messages for user
+
+        Args:
+            roomId (int): 
+            sender (int): 
+            receiver (int): 
+        """
         print("Chat dump")
         print("---------------------------------------------------------------")
 
@@ -156,7 +222,7 @@ class FirebaseService:
                     leftPrint(data['message'])
                     leftPrint("-"*30)
                     leftPrint(timeago.format(
-                        data["timestamp"],             time.strftime(
+                        data["timestamp"], time.strftime(
                             "%Y-%m-%d %H:%M:%S")
                     ))
                     leftPrint("")
@@ -164,12 +230,14 @@ class FirebaseService:
                     rightPrint(data['message'])
                     rightPrint("-"*30)
                     rightPrint(timeago.format(
-                        data["timestamp"],             time.strftime(
+                        data["timestamp"], time.strftime(
                             "%Y-%m-%d %H:%M:%S")
                     ))
                     rightPrint("")
 
     def lookupDirectory(self):
+        """Username and employee id is printed
+        """
         self.updatesMessagesForUsers()
         t = PrettyTable(['Name', 'ID'])
         dir = self.currentUser.getDirectory()
@@ -183,6 +251,8 @@ class FirebaseService:
         print(t)
 
     def getOnlineUsers(self):
+        """Prints the list of online users
+        """
         self.updatesMessagesForUsers()
 
         t = PrettyTable(['Name', 'ID'])
@@ -202,12 +272,25 @@ class FirebaseService:
         print(t)
 
     def getNameFromDirectory(self, Id):
+        """Get the name of the user from employee id
+
+        Args:
+            Id (int): employee id
+
+        Returns:
+            str: username of the employee
+        """
         directory = self.currentUser.getDirectory()
         for d in directory:
             if d['id'] == Id:
                 return d['username']
 
     def stream_handler(self, message):
+        """Stream handler for messages
+
+        Args:
+            message (str): stream object
+        """
 
         receiver = self.currentUser.getId()
 
@@ -215,8 +298,8 @@ class FirebaseService:
             now = time.strftime("%Y-%m-%d %H:%M:%S")
 
             print()
-            customMessage("New message from " +
-                          self.getNameFromDirectory(message["data"]["sender"]))
+            customMessage("New message from {}".format(
+                self.getNameFromDirectory(message["data"]["sender"])))
             print("[{0}] :> {1}".format(self.getNameFromDirectory(
                 message["data"]["sender"]), message["data"]["message"]), "({})".format(timeago.format(message["data"]["timestamp"], now)))
             print()
@@ -230,9 +313,16 @@ class FirebaseService:
                 print()
 
     def closeStream(self):
+        """Close the stream
+        """
         self.stream.close()
 
     def seeLiveMessage(self, senderId):
+        """Print live messages from stream
+
+        Args:
+            senderId (int): employee id of the sender
+        """
 
         self.updatesMessagesForUsers()
 
@@ -256,6 +346,11 @@ class FirebaseService:
             print(e)
 
     def seeMessages(self, senderId):
+        """See all the messages from sender
+
+        Args:
+            senderId (int): employee of the sender
+        """
         self.updatesMessagesForUsers()
         userRooms = self.currentUser.getRooms()
         currentUserId = self.currentUser.getId()
@@ -269,6 +364,11 @@ class FirebaseService:
             self.getMessagesFromRoom(room, senderId, currentUserId)
 
     def createGroup(self):
+        """Creates group with random id
+
+        Returns:
+           str: returns id of created group
+        """
         res = ''.join(secrets.choice(string.ascii_lowercase + string.digits)
                       for i in range(30))
 
@@ -280,6 +380,12 @@ class FirebaseService:
         return res
 
     def addUserToGroup(self, groupId, userid):
+        """Adds user to group with group id
+
+        Args:
+            groupId (int): Group id
+            userid (int): Employee id
+        """
         group = self.firebaseDB.child("groups").child(groupId).get()
 
         admin = group.val()['admin']
@@ -292,6 +398,8 @@ class FirebaseService:
             errorMessage("You are not the admin")
 
     def getOwnedGroups(self):
+        """Get current users group
+        """
         currentUserId = self.currentUser.getId()
 
         groups = self.firebaseDB.child("groups").order_by_child(
@@ -305,6 +413,11 @@ class FirebaseService:
         print(t)
 
     def getGroups(self):
+        """Print all the groups of user
+
+        Returns:
+            list: list of groups
+        """
         currentUserId = self.currentUser.getId()
 
         groupsRef = self.firebaseDB.child("groups").get()
@@ -323,6 +436,12 @@ class FirebaseService:
         return groups
 
     def sendMessageToGroup(self, msg, groupId):
+        """Send message to group
+
+        Args:
+            msg (str): message to send
+            groupId (int): group id
+        """
         currentUserId = self.currentUser.getId()
         timestamp = str(time.time()).split(".")[0]
         now = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -342,8 +461,8 @@ class FirebaseService:
         if len(msg) == 4:
             now = time.strftime("%Y-%m-%d %H:%M:%S")
             leftPrint(msg["message"])
-            customMessage("New message from " +
-                          self.getNameFromDirectory(msg["sender"]))
+            senderName = self.getNameFromDirectory(msg["sender"])
+            customMessage("New message from {}".format(senderName))
             print("[{0}] :> {1}".format(self.getNameFromDirectory(
                 msg["sender"]), msg["message"]), "({})".format(timeago.format(msg["timestamp"], now)))
             print()

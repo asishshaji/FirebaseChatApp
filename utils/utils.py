@@ -15,15 +15,23 @@ class bcolors:
 
 
 def hashPassword(password):
+    """Hash of the password
+
+    Args:
+        password (str): password
+
+    Returns:
+        str: hashed password
+    """
     return hashlib.sha256(password.encode()).hexdigest()
 
 
 def successMessage(msg):
-    print(bcolors.OKGREEN + "[i]",  msg)
+    print(bcolors.OKGREEN + "[i]", msg)
 
 
 def warningMessage(msg):
-    print(bcolors.WARNING+"[!]", msg)
+    print(bcolors.WARNING + "[!]", msg)
 
 
 def errorMessage(msg):
@@ -33,7 +41,7 @@ def errorMessage(msg):
 def customMessage(msg):
     row = len(msg)
     h = ''.join(['+'] + ['-' * row] + ['+'])
-    result = h + '\n'"|"+msg+"|"'\n' + h
+    result = h + '\n'"|" + msg + "|"'\n' + h
     print(result)
 
 
@@ -45,15 +53,24 @@ def rightPrint(msg):
     print("{0:>100} ".format(msg))
 
 
+features = ["[✔] Authentication using sha",
+            "[✔] Get user profile",
+            "[✔] Send/View messages",
+            "[✔] Realtime messaging using streams",
+            "[✔] Mapping b/w username and id",
+            "[✔] See online users",
+            "[✔] Create groups",
+            "[✔] Add users to groups",
+            "[✔] Stream messages from groups"
+            ]
+
+
 def displayFeatures():
     x = PrettyTable()
     x.field_names = ["FireChat Features"]
     x.align = "l"
     x.padding_width = 5
-    x.add_row(["[✔] Authentication"])
-    x.add_row(["[✔] Get user profile"])
-    x.add_row(["[✔] Send\View messages"])
-    x.add_row(["[✔] Realtime messaging using streams"])
-    x.add_row(["[✔] Mapping b\w username and id"])
-    x.add_row(["[✔] See online users"])
+    for feature in features:
+        x.add_row([feature])
+
     print(x)

@@ -1,10 +1,14 @@
-from utils.utils import successMessage, leftPrint, rightPrint, customMessage, warningMessage, displayFeatures
+from utils.utils import errorMessage, successMessage, customMessage, displayFeatures
 from services.firebaseservice import FirebaseService
+import time
+
+from dotenv import load_dotenv
+import os
 
 
 def main():
     successMessage("Starting FireChat")
-    service = FirebaseService("usttest-89c43-default-rtdb")
+    service = FirebaseService(os.getenv("PROJECT_URL"))
 
     displayFeatures()
 
@@ -12,7 +16,7 @@ def main():
 
         if service.currentUser != None:
             customMessage("     Logged in as " + service.currentUser.getName() +
-                          " "+str(service.currentUser.getId()))
+                          " " + str(service.currentUser.getId()))
         else:
             print()
             customMessage("     You are not logged in.      ")
@@ -25,13 +29,13 @@ def main():
             # choice = 8
             if choice == 1:
                 username = input("Username :> ")
-                id = int(input("ID :> "))
+                empId = int(input("ID :> "))
                 password = input("Password :> ")
-                service.signUpUser(username, id, password)
+                service.signUpUser(username, empId, password)
             elif choice == 2:
                 username = input("Username :> ")
                 password = input("Password :> ")
-                service.signInUser(username,  password)
+                service.signInUser(username, password)
 
             elif choice == 3:
                 print("")
@@ -59,7 +63,6 @@ def main():
                 # warningMessage("Stream available only for two minutes.")
                 senderId = int(input("Sender id :> "))
                 service.seeLiveMessage(senderId)
-                import time
                 time.sleep(1200)
                 service.closeStream()
 
@@ -83,15 +86,15 @@ def main():
                 service.getOwnedGroups()
 
                 userid = int(input("Enter user id :> "))
-                groupid = input("Enter group id :> ")
-                service.addUserToGroup(groupid, userid)
+                groupId = input("Enter group id :> ")
+                service.addUserToGroup(groupId, userid)
 
             elif choice == 11:
                 # Send message to group
 
                 service.updateDirectory()
 
-                groups = service.getGroups()
+                _ = service.getGroups()
                 groupId = input("Enter group id :> ")
 
                 while True:
@@ -110,7 +113,6 @@ def main():
                 groupId = input("Group id :> ")
                 service.seeLiveMessagesFromGroup(groupId)
 
-                import time
                 time.sleep(1200)
                 service.closeStream()
             else:
@@ -118,8 +120,10 @@ def main():
                 service.closeStream()
                 exit()
         except Exception as e:
+            errorMessage(e)
             service.goOffline()
             exit()
 
 
+load_dotenv(".env", verbose=True)
 main()
